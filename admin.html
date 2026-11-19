@@ -33,7 +33,7 @@ table{width:100%;border-collapse:collapse;font-size:15px;min-width:560px} th,td{
 <section id="login">
 <form class="card" id="loginForm" autocomplete="on">
 <h1>Pagewise Admin</h1>
-<p style="margin:0;color:var(--muted)">Sign in to view sales forecasts.</p>
+<p style="margin:0;color:var(--muted)">Sign in to view your dashboard.</p>
 <label for="u">Username</label><input id="u" autocomplete="username" required>
 <label for="p">Password</label><input id="p" type="password" autocomplete="current-password" required>
 <p class="err" id="err" role="alert"></p>
@@ -144,17 +144,37 @@ function render() {
 
 // BAGONG DAGDAG LANG - ORDERS RENDER
 function renderOrders() {
-  if (!Backend.getOrders) return;
-  const orders = Backend.getOrders();
-  const stats = Backend.getOrderStats();
-  $("statOrders").textContent = stats.totalOrders;
-  $("statRevenue").textContent = peso(stats.totalRevenue);
-  $("statPending").textContent = stats.pending;
-  $("ordersTbl").innerHTML = `<tr><th>Order ID</th><th>Customer</th><th>Book</th><th>Qty</th><th>Total</th><th>Date</th><th>Status</th><th>Action</th></tr>` + orders.map(o => {
-    const d = new Date(o.date).toLocaleDateString("en-PH", {month:"short", day:"numeric", year:"numeric"});
-    return `<tr><td><b>${o.id}</b></td><td>${esc(o.customer)}<br><small style="color:var(--muted)">${esc(o.email||"")}</small></td><td>${esc(o.title)}</td><td>${o.qty}</td><td>${peso(o.total)}</td><td>${d}</td><td><span class="badge ${o.status}">${o.status}</span></td><td><select onchange="changeStatus('${o.id}', this.value)"><option value="">Change...</option><option value="Pending">Pending</option><option value="Shipped">Shipped</option><option value="Delivered">Delivered</option></select></td></tr>`;
-  }).join("");
-  drawOrderChart(stats.last7);
+  const orders = Backend.getOrders ? Backend.getOrders() : [];
+  const showAll = window.showAllOrders || false;
+  const list = showAll ? orders : orders.slice(0, 5);
+
+  if (!orders.length) {
+    $("ordersTbl").innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px">No orders yet.</td></tr>`;
+    return;
+  }
+
+  $("ordersTbl").innerHTML = list.map(o => `
+    <tr>
+      <td>${o.id}</td>
+      <td>${esc(o.customer || o.email || "")}</td>
+      <td>${esc(o.title)}</td>
+      <td>${o.qty}</td>
+      <td>${peso(o.total)}</td>
+      <td>${new Date(o.date).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</td>
+      <td><span class="pill">${o.status}</span></td>
+      <td>
+        <select onchange="Backend.updateOrderStatus('${o.id}', this.value); render()">
+          <option ${o.status === "Pending" ? "selected" : ""}>Pending</option>
+          <option ${o.status === "Shipped" ? "selected" : ""}>Shipped</option>
+          <option ${o.status === "Delivered" ? "selected" : ""}>Delivered</option>
+        </select>
+      </td>
+    </tr>`).join("") + 
+    `<tr><td colspan="8" style="text-align:center">
+      <button class="btn" onclick="window.showAllOrders = !window.showAllOrders; render()">
+        ${showAll ? "Show Less" : `Show All (${orders.length})`}
+      </button>
+    </td></tr>`;
 }
 function changeStatus(id, status) { if(!status) return; Backend.updateOrderStatus(id, status); renderOrders(); }
 function drawOrderChart(last7) {
