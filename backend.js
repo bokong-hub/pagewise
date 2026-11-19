@@ -1,129 +1,183 @@
-/* Pagewise Books - backend */
-const Backend = (() => {
-  const KEY = "pw_data_v1", SESSION = "pw_session";
-  const CUSTOMERS_KEY = "pw_customers", CUSTOMER_SESSION = "pw_customer";
-  const ORDERS_KEY = "pw_orders_v1";
-  const SESSION_MS = 30 * 60 * 1000;
-  const SALT = "pagewise::";
+// Pagewise Shop - Dating JS, gumagana
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const peso = (n) => "₱" + Math.round(n || 0).toLocaleString("en-PH");
 
-  const read = (s, k) => { try { return JSON.parse(s.getItem(k)); } catch { return null; } };
-  const write = (s, k, v) => { try { s.setItem(k, JSON.stringify(v)); } catch {} };
+  let cart = [];
+  let currentUser = null;
+  let currentFilter = "all";
 
-  async function sha256(text) {
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  function getBooks() {
+    const data = Backend.getData();
+    return data.titles || [];
   }
 
-  /* ---------- ADMIN AUTH - FIXED: NO LOCK ANYMORE ---------- */
-  // FIX: Tinanggal ko yung LOCK. Yan yung dahilan kung bakit ayaw gumana kahit tama password mo.
-  // NEW LOGIN: admin / admin123
- async function login(user, pass) {
-  if (user.trim() === "admin" && pass === "admin123") {
-    write(sessionStorage, SESSION, { user: "admin", exp: Date.now() + SESSION_MS });
-    return { ok: true };
-  }
-  return { ok: false, error: "Wrong username or password." };
-}
-    return { ok: false, error: "Wrong username or password." };
-  }
-  const isAuthed = () => { const s = read(sessionStorage, SESSION); return !!(s && s.exp > Date.now()); };
-  const logout = () => { try { sessionStorage.removeItem(SESSION); } catch {} };
+  // RENDER BOOKS
+  function renderBooks() {
+    const grid = $("bookGrid");
+    if (!grid) return;
+    const books = getBooks();
+    const q = ($("searchInput") ? $("searchInput").value.toLowerCase() : "");
+    const filtered = books.filter((b) => {
+      const matchSearch = !q || b.title.toLowerCase().includes(q);
+      const matchFilter = currentFilter === "all" || (currentFilter === "low" ? b.stock <= 10 : true);
+      return matchSearch && matchFilter;
+    });
 
-  /* ---------- CUSTOMER AUTH ---------- */
-  function getCustomers() { return read(localStorage, CUSTOMERS_KEY) || []; }
-  function saveCustomers(list) { write(localStorage, CUSTOMERS_KEY, list); }
-  async function customerRegister(email, password) {
-    email = email.trim().toLowerCase();
-    if (!email || !password) return { ok: false, error: "Email and password are required." };
-    if (password.length < 4) return { ok: false, error: "Password must be at least 4 characters." };
-    const customers = getCustomers();
-    if (customers.find(c => c.email === email)) return { ok: false, error: "An account with this email already exists." };
-    const hash = await sha256(SALT + password);
-    customers.push({ email, hash, created: Date.now() });
-    saveCustomers(customers);
-    write(localStorage, CUSTOMER_SESSION, { email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 });
-    return { ok: true };
-  }
-  async function customerLogin(email, password) {
-    email = email.trim().toLowerCase();
-    if (!email || !password) return { ok: false, error: "Email and password are required." };
-    const customers = getCustomers();
-    const user = customers.find(c => c.email === email);
-    if (!user) return { ok: false, error: "No account found with this email." };
-    const hash = await sha256(SALT + password);
-    if (hash !== user.hash) return { ok: false, error: "Incorrect password." };
-    write(localStorage, CUSTOMER_SESSION, { email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 });
-    return { ok: true };
-  }
-  function customerLogout() { try { localStorage.removeItem(CUSTOMER_SESSION); } catch {} }
-  function isCustomerLoggedIn() { const s = read(localStorage, CUSTOMER_SESSION); return !!(s && s.exp > Date.now()); }
-  function getCurrentCustomer() { const s = read(localStorage, CUSTOMER_SESSION); return (s && s.exp > Date.now()) ? s.email : null; }
-
-  /* ---------- DATA STORE ---------- */
-  const monthLabels = () => { const out = [], d = new Date(); for (let i = 11; i >= 0; i--) { const m = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(m.toLocaleString("en", { month: "short" })); } return out; };
-  function seed() {
-    const titles = [
-      ["The Lantern Keeper", 420, 38],
-      ["Salt & Hollow Hills", 380, 22],
-      ["A Quiet Orchard", 450, 15],
-      ["Midnight at the Station", 399, 60],
-    ].map(([title, price, stock]) => ({ title, price, stock, units: Array(12).fill(0) }));
-    return { titles };
-  }
-  function load() { let d = read(localStorage, KEY); if (!d) { d = seed(); write(localStorage, KEY, d); } return d; }
-  const getData = () => ({ ...load(), months: monthLabels() });
-  function addSale(title, qty) { const d = load(), t = d.titles.find(x => x.title === title); if (!t || !(qty > 0)) return false; t.units[11] += qty; t.stock = Math.max(0, t.stock - qty); write(localStorage, KEY, d); return true; }
-  function restock(title, qty) { const d = load(), t = d.titles.find(x => x.title === title); if (!t || !(qty > 0)) return false; t.stock += qty; write(localStorage, KEY, d); return true; }
-  const reset = () => { write(localStorage, ORDERS_KEY, []); };
-
-  /* ---------- ORDERS ---------- */
-  function getOrders() { let o = read(localStorage, ORDERS_KEY); if (!o) { o = []; write(localStorage, ORDERS_KEY, o); } return o; }
-  function addOrder(order) {
-    const orders = getOrders();
-    const maxNum = orders.reduce((m, o) => { const n = parseInt(String(o.id).replace("PW-", ""), 10); return isNaN(n) ? m : Math.max(m, n); }, 1000);
-    const id = "PW-" + (maxNum + 1);
-    const newOrder = { id, date: Date.now(), status: "Pending", ...order, total: order.qty * order.price };
-    orders.unshift(newOrder); write(localStorage, ORDERS_KEY, orders);
-    addSale(order.title, order.qty);
-    return newOrder;
-  }
-  function updateOrderStatus(id, status) { const orders = getOrders(); const o = orders.find(x => x.id === id); if (!o) return false; o.status = status; write(localStorage, ORDERS_KEY, orders); return true; }
-  function getOrderStats() {
-    const orders = getOrders();
-    const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
-    const totalOrders = orders.length;
-    const pending = orders.filter(o => o.status === "Pending").length;
-    const last7 = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-      const label = d.toLocaleDateString("en", { month: "short", day: "numeric" });
-      const dayTotal = orders.filter(o => { const od = new Date(o.date); return od.toDateString() === d.toDateString(); }).reduce((s, o) => s + o.total, 0);
-      last7.push({ label, total: dayTotal });
+    if (!filtered.length) {
+      grid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:#888'>No books found.</p>";
+      return;
     }
-    return { totalRevenue, totalOrders, pending, last7 };
+
+    grid.innerHTML = filtered.map((b) => `
+      <article class="book-card">
+        <div class="book-cover">${b.title.charAt(0)}</div>
+        <h3>${b.title}</h3>
+        <p class="price">${peso(b.price)}</p>
+        <p class="stock">${b.stock > 0 ? b.stock + " in stock" : "Out of stock"}</p>
+        <button class="btn" onclick="addToCart('${b.title.replace(/'/g, "\\'")}')" ${b.stock <= 0 ? "disabled" : ""}>Add to Cart</button>
+      </article>
+    `).join("");
   }
 
-  /* ---------- ANALYTICS ---------- */
-  function analytics() {
-    const { titles, months } = getData();
-    const revenue = months.map((_, i) => titles.reduce((s, t) => s + t.units[i] * t.price, 0));
-    const perTitle = titles.map(t => ({ title: t.title, stock: t.stock, last: t.units[11], demand: t.units[11], trend: "steady", monthsLeft: Infinity, reorder: 0 }));
-    return { months, rev: { actual: revenue }, perTitle };
+  // CART
+  window.addToCart = function (title) {
+    const books = getBooks();
+    const book = books.find((b) => b.title === title);
+    if (!book) return;
+    const found = cart.find((c) => c.title === title);
+    if (found) found.qty += 1;
+    else cart.push({ title, price: book.price, qty: 1 });
+    renderCart();
+    const badge = $("cartCount");
+    if (badge) badge.textContent = cart.reduce((s, c) => s + c.qty, 0);
+    alert(title + " added to cart!");
+  };
+
+  function renderCart() {
+    const list = $("cartItems");
+    if (!list) return;
+    if (!cart.length) {
+      list.innerHTML = "<p style='text-align:center;color:#888'>Your cart is empty.</p>";
+      if ($("cartTotal")) $("cartTotal").textContent = peso(0);
+      return;
+    }
+    list.innerHTML = cart.map((c, i) => `
+      <div class="cart-row">
+        <span>${c.title}</span>
+        <span>${c.qty} x ${peso(c.price)}</span>
+        <span><b>${peso(c.price * c.qty)}</b></span>
+        <button onclick="removeFromCart(${i})">✕</button>
+      </div>
+    `).join("");
+    const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
+    if ($("cartTotal")) $("cartTotal").textContent = peso(total);
   }
 
-  /* ---------- CUSTOMER PROFILE ---------- */
-  function getCustomerProfile() { const email = getCurrentCustomer(); if (!email) return null; const customers = getCustomers(); return customers.find(c => c.email === email) || null; }
-  function updateCustomerProfile(username) {
-    const email = getCurrentCustomer(); if (!email) return { ok: false, error: "Not logged in." };
-    username = username.trim();
-    if (!username || username.length < 2) return { ok: false, error: "Username must be at least 2 characters." };
-    if (username.length > 20) return { ok: false, error: "Username is too long (max 20 characters)." };
-    const customers = getCustomers(); const user = customers.find(c => c.email === email);
-    if (!user) return { ok: false, error: "Account not found." };
-    if (customers.some(c => c.username && c.username.toLowerCase() === username.toLowerCase() && c.email !== email)) return { ok: false, error: "This username is already taken." };
-    user.username = username; saveCustomers(customers); return { ok: true };
-  }
-  function hasProfile() { const profile = getCustomerProfile(); return !!(profile && profile.username); }
+  window.removeFromCart = function (i) {
+    cart.splice(i, 1);
+    renderCart();
+    const badge = $("cartCount");
+    if (badge) badge.textContent = cart.reduce((s, c) => s + c.qty, 0);
+  };
 
-  return { login, logout, isAuthed, getData, addSale, restock, reset, analytics, customerRegister, customerLogin, customerLogout, isCustomerLoggedIn, getCurrentCustomer, getCustomerProfile, updateCustomerProfile, hasProfile, getOrders, addOrder, updateOrderStatus, getOrderStats };
+  // LOGIN / REGISTER MODAL
+  window.openLogin = function () {
+    if ($("loginModal")) $("loginModal").classList.remove("hide");
+  };
+  window.closeLogin = function () {
+    if ($("loginModal")) $("loginModal").classList.add("hide");
+  };
+
+  window.switchTab = function (tab) {
+    if ($("loginTab")) $("loginTab").classList.toggle("active", tab === "login");
+    if ($("registerTab")) $("registerTab").classList.toggle("active", tab === "register");
+    if ($("loginForm")) $("loginForm").classList.toggle("hide", tab !== "login");
+    if ($("registerForm")) $("registerForm").classList.toggle("hide", tab !== "register");
+  };
+
+  // CHECKOUT
+  window.checkout = function () {
+    if (!cart.length) { alert("Your cart is empty."); return; }
+    if (!currentUser) { alert("Please log in first."); openLogin(); return; }
+    const address = $("addressInput") ? $("addressInput").value : "";
+    const payment = $("paymentSelect") ? $("paymentSelect").value : "COD";
+    const deliveryFee = 50;
+    let ok = true;
+    cart.forEach((c) => {
+      const r = Backend.placeOrder(c.title, c.qty, currentUser.email, address, payment, deliveryFee / cart.length);
+      if (!r.ok) { alert(r.error); ok = false; }
+    });
+    if (ok) {
+      alert("Order placed! Thank you.");
+      cart = [];
+      renderCart();
+      renderBooks();
+      const badge = $("cartCount");
+      if (badge) badge.textContent = "0";
+      if ($("cartModal")) $("cartModal").classList.add("hide");
+    }
+  };
+
+  // INIT
+  document.addEventListener("DOMContentLoaded", () => {
+    renderBooks();
+    renderCart();
+
+    if ($("searchInput")) $("searchInput").addEventListener("input", renderBooks);
+
+    // Filter buttons
+    document.querySelectorAll("[data-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentFilter = btn.dataset.filter;
+        renderBooks();
+      });
+    });
+
+    // Login form
+    const lf = $("loginForm");
+    if (lf) lf.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = $("loginEmail") ? $("loginEmail").value : "";
+      const pass = $("loginPass") ? $("loginPass").value : "";
+      const r = Backend.customerLogin(email, pass);
+      if (r.ok) {
+        currentUser = r.user;
+        if ($("userName")) $("userName").textContent = "Hi, " + (r.user.name || r.user.email);
+        if ($("loginBtn")) $("loginBtn").textContent = "Log out";
+        closeLogin();
+        alert("Welcome back, " + (r.user.name || r.user.email) + "!");
+      } else {
+        alert(r.error);
+      }
+    });
+
+    // Register form
+    const rf = $("registerForm");
+    if (rf) rf.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = $("regName") ? $("regName").value : "";
+      const email = $("regEmail") ? $("regEmail").value : "";
+      const pass = $("regPass") ? $("regPass").value : "";
+      const r = Backend.customerRegister(name, email, pass);
+      if (r.ok) {
+        alert("Account created! Please log in.");
+        switchTab("login");
+      } else {
+        alert(r.error);
+      }
+    });
+
+    // Cart modal
+    if ($("cartBtn")) $("cartBtn").addEventListener("click", () => {
+      if ($("cartModal")) $("cartModal").classList.remove("hide");
+    });
+    if ($("closeCart")) $("closeCart").addEventListener("click", () => {
+      if ($("cartModal")) $("cartModal").classList.add("hide");
+    });
+
+    // Checkout button
+    if ($("checkoutBtn")) $("checkoutBtn").addEventListener("click", checkout);
+  });
 })();
