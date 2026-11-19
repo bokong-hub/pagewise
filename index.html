@@ -685,18 +685,22 @@ function updateCartUI() {
   document.getElementById("cartTotal").textContent = total;
 }
 function removeCart(i) { cart.splice(i,1); localStorage.setItem("pw_cart", JSON.stringify(cart)); updateCartUI(); }
-function checkoutCart() { 
-  if(cart.length===0) return alert("Empty pa cart mo!"); 
+function checkoutCart() {
+  let savedCart = [];
+  try { savedCart = JSON.parse(localStorage.getItem("pw_cart") || "[]"); } catch(e) { savedCart = []; }
+  if (savedCart.length === 0) return alert("Empty pa cart mo!");
   const email = (typeof Backend !== "undefined" && Backend.getCurrentCustomer) ? Backend.getCurrentCustomer() : null;
   const customer = email || "Guest";
-  cart.forEach(item => {
+  savedCart.forEach(item => {
     Backend.addOrder({ customer: customer, email: email || "", title: item.name, qty: 1, price: Number(item.price) });
   });
-  alert("Order placed! Total: ₱" + document.getElementById("cartTotal").textContent + " - Makikita mo na sa Admin!"); 
-  cart=[]; 
-  localStorage.setItem("pw_cart","[]"); 
-  updateCartUI(); 
-  closeCart(); 
+  const totalEl = document.getElementById("cartTotal");
+  alert("Order placed! Total: ₱" + (totalEl ? totalEl.textContent : "0") + " - Makikita mo na sa Admin!");
+  localStorage.setItem("pw_cart", "[]");
+  if (typeof cart !== "undefined") cart = [];
+  updateCartUI();
+  closeCart();
+}
 }function closeCart() { document.getElementById("cartDrawer").style.display = "none"; }
 document.getElementById("cartBtn").onclick = function() { document.getElementById("cartDrawer").style.display = "block"; };
 updateCartUI();
