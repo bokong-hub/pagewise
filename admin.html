@@ -9,121 +9,93 @@
 <style>
 :root{--paper:#F6F1E7;--ink:#1F2A28;--green:#2F5D50;--green-dark:#244a40;--clay:#B4471F;--gold:#C9A24B;--sand:#E6D8BE;--card:#fff;--muted:#4a5754}
 @media (prefers-color-scheme:dark){:root{--paper:#161d1b;--ink:#F1ECE0;--card:#212b28;--sand:#33403c;--muted:#b8c2bd;--green:#4E8A6F;--green-dark:#5da283}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.5}
-h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0}
-.wrap{max-width:1100px;margin:0 auto;padding:20px 24px 48px}
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0} .wrap{max-width:1100px;margin:0 auto;padding:20px 24px 48px}
 .btn{min-height:44px;padding:0 22px;border-radius:999px;border:2px solid transparent;font:600 15px Inter,sans-serif;cursor:pointer;background:var(--green);color:#fff}
-.btn:hover{background:var(--green-dark)}
-.btn.out{background:transparent;border-color:var(--green);color:var(--green)}
+.btn:hover{background:var(--green-dark)} .btn.out{background:transparent;border-color:var(--green);color:var(--green)}
 input,select{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid #b9ae98;font:16px Inter,sans-serif;background:var(--card);color:var(--ink)}
-.card{background:var(--card);border-radius:16px;padding:20px}
-.hide{display:none!important}
-/* login */
-#login{min-height:100vh;display:grid;place-items:center;padding:24px}
-#login .card{width:100%;max-width:380px;display:grid;gap:12px}
-#login h1{font-size:30px}
-.err{color:var(--clay);min-height:20px;font-size:14px;margin:0}
-label{font-size:14px;font-weight:600}
-/* dash */
+.card{background:var(--card);border-radius:16px;padding:20px} .hide{display:none!important}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px} #login .card{width:100%;max-width:380px;display:grid;gap:12px}
+#login h1{font-size:30px} .err{color:var(--clay);min-height:20px;font-size:14px;margin:0} label{font-size:14px;font-weight:600}
 .top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
-.kpi small{color:var(--muted);display:block}
-.kpi b{font:700 28px Fraunces,Georgia,serif}
-.up{color:var(--green)}.down{color:var(--clay)}
-.scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:15px;min-width:560px}
-th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--sand)}
-.pill{padding:2px 10px;border-radius:999px;font-size:13px;background:var(--sand)}
-.pill.warn{background:var(--clay);color:#fff}
-.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-svg text{fill:var(--muted);font:12px Inter,sans-serif}
+.kpi small{color:var(--muted);display:block} .kpi b{font:700 28px Fraunces,Georgia,serif}
+.up{color:var(--green)}.down{color:var(--clay)} .scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px;min-width:560px} th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--sand)}
+.pill{padding:2px 10px;border-radius:999px;font-size:13px;background:var(--sand)} .pill.warn{background:var(--clay);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px} svg text{fill:var(--muted);font:12px Inter,sans-serif}
 .legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.badge{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.badge.Pending{background:#FDEBC8;color:#7a4a00} .badge.Shipped{background:#D6EAF8;color:#1a5276} .badge.Delivered{background:#D5F5E3;color:#1e8449}
 </style>
 </head>
 <body>
-
 <section id="login">
-  <form class="card" id="loginForm" autocomplete="on">
-    <h1>Pagewise Admin</h1>
-    <p style="margin:0;color:var(--muted)">Sign in to view sales forecasts.</p>
-    <label for="u">Username</label><input id="u" autocomplete="username" required>
-    <label for="p">Password</label><input id="p" type="password" autocomplete="current-password" required>
-    <p class="err" id="err" role="alert"></p>
-    <button class="btn" type="submit">Sign in</button>
-  </form>
+<form class="card" id="loginForm" autocomplete="on">
+<h1>Pagewise Admin</h1>
+<p style="margin:0;color:var(--muted)">Sign in to view sales forecasts.</p>
+<label for="u">Username</label><input id="u" autocomplete="username" required>
+<label for="p">Password</label><input id="p" type="password" autocomplete="current-password" required>
+<p class="err" id="err" role="alert"></p>
+<button class="btn" type="submit">Sign in</button>
+</form>
 </section>
-
 <main id="dash" class="wrap hide">
-  <div class="top">
-    <h1>Sales &amp; forecast</h1>
-    <div class="row" style="margin:0">
-      <a class="btn out" href="landing.html" style="display:inline-flex;align-items:center">View shop</a>
-      <button type="button" class="nav-login" id="authBtn">Log in</button>
-    </div>
-  </div>
+<div class="top">
+<h1>Sales &amp; forecast</h1>
+<div class="row" style="margin:0">
+<a class="btn out" href="landing.html" style="display:inline-flex;align-items:center">View shop</a>
+<button type="button" class="nav-login" id="authBtn">Log in</button>
+</div>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="card" style="margin-bottom:20px">
+<h2 style="font-size:22px">Revenue: last 12 months and next 3</h2>
+<div class="scroll"><svg id="chart" viewBox="0 0 720 280" width="100%" role="img" aria-label="Revenue line chart with forecast"></svg></div>
+<div class="legend"><span>● Actual</span><span>┄ 3-month average</span><span>● Forecast (shaded = likely range)</span></div>
+</div>
+<div class="card" style="margin-bottom:20px">
+<h2 style="font-size:22px">Next month demand &amp; reorder advice</h2>
+<div class="scroll"><table id="tbl"></table></div>
+</div>
 
-  <div class="kpis" id="kpis"></div>
+<!-- BAGONG DAGDAG LANG - HINDI BINURA YUNG LUMA -->
+<div class="card" style="margin-bottom:20px">
+<h2 style="font-size:22px">Orders - Last 7 Days</h2>
+<p style="color:var(--muted);margin:6px 0 12px">Ito yung mga pekeng orders niyo. Pag nag-order kayo sa shop, dito siya lalabas.</p>
+<div class="scroll"><svg id="orderChart" viewBox="0 0 720 220" width="100%" role="img" aria-label="Orders last 7 days"></svg></div>
+<div class="kpis" style="margin-top:16px">
+<div class="card kpi"><small>Total Orders</small><b id="statOrders">0</b></div>
+<div class="card kpi"><small>Total Revenue (Orders)</small><b id="statRevenue">₱0</b></div>
+<div class="card kpi"><small>Pending Orders</small><b id="statPending">0</b></div>
+</div>
+<div class="scroll"><table id="ordersTbl"></table></div>
+</div>
 
-  <div class="card" style="margin-bottom:20px">
-    <h2 style="font-size:22px">Revenue: last 12 months and next 3</h2>
-    <div class="scroll"><svg id="chart" viewBox="0 0 720 280" width="100%" role="img" aria-label="Revenue line chart with forecast"></svg></div>
-    <div class="legend"><span>● Actual</span><span>┄ 3-month average</span><span>● Forecast (shaded = likely range)</span></div>
-  </div>
-
-  <div class="card" style="margin-bottom:20px">
-    <h2 style="font-size:22px">Next month demand &amp; reorder advice</h2>
-    <div class="scroll"><table id="tbl"></table></div>
-  </div>
-
-  <div class="card">
-    <h2 style="font-size:22px">Record a sale or restock</h2>
-    <div class="row">
-      <select id="sel" aria-label="Title"></select>
-      <input id="qty" type="number" min="1" value="1" aria-label="Quantity" style="width:100px">
-      <button class="btn" id="sell">Add sale</button>
-      <button class="btn out" id="stock">Add stock</button>
-      <button class="btn out" id="reset">Reset demo data</button>
-    </div>
-  </div>
+<div class="card">
+<h2 style="font-size:22px">Record a sale or restock</h2>
+<div class="row">
+<select id="sel" aria-label="Title"></select>
+<input id="qty" type="number" min="1" value="1" aria-label="Quantity" style="width:100px">
+<button class="btn" id="sell">Add sale</button>
+<button class="btn out" id="stock">Add stock</button>
+<button class="btn out" id="reset">Reset demo data</button>
+</div>
+</div>
 </main>
-
 <script src="backend.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const peso = n => "₱" + Math.round(n).toLocaleString("en-PH");
-
 function show() {
   const ok = Backend.isAuthed();
   $("login").classList.toggle("hide", ok);
   $("dash").classList.toggle("hide", !ok);
-  if (ok) render();
-}
-
-$("loginForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const r = await Backend.login($("u").value, $("p").value);
-  $("err").textContent = r.ok ? "" : r.error;
-  if (r.ok) { $("p").value = ""; show(); }
-});
-function show() {
-  const ok = Backend.isAuthed();
-  $("login").classList.toggle("hide", ok);
-  $("dash").classList.toggle("hide", !ok);
-
   const authBtn = $("authBtn");
-  if (ok) {
-    authBtn.textContent = "Log out";
-    authBtn.onclick = () => {
-      Backend.logout();
-      show();
-    };
-    render();
-  } else {
-    authBtn.textContent = "Log in";
-    authBtn.onclick = null; // optional, button is hidden anyway
-  }
+  if (ok) { authBtn.textContent = "Log out"; authBtn.onclick = () => { Backend.logout(); show(); }; render(); }
+  else { authBtn.textContent = "Log in"; authBtn.onclick = null; }
 }
+$("loginForm").addEventListener("submit", async e => { e.preventDefault(); const r = await Backend.login($("u").value, $("p").value); $("err").textContent = r.ok ? "" : r.error; if (r.ok) { $("p").value = ""; show(); } });
 $("sell").onclick = () => { Backend.addSale($("sel").value, +$("qty").value); render(); };
 $("stock").onclick = () => { Backend.restock($("sel").value, +$("qty").value); render(); };
 $("reset").onclick = () => { if (confirm("Reset to demo data?")) { Backend.reset(); render(); } };
@@ -134,65 +106,62 @@ function render() {
   const growth = ((next[0].value - last) / last) * 100;
   const total3 = next.reduce((s, p) => s + p.value, 0);
   const low = perTitle.filter(t => t.reorder > 0).length;
-
   $("kpis").innerHTML = `
     <div class="card kpi"><small>This month so far</small><b>${peso(last)}</b></div>
-    <div class="card kpi"><small>Forecast next month</small><b>${peso(next[0].value)}</b>
-      <span class="${growth >= 0 ? "up" : "down"}">${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth).toFixed(1)}%</span></div>
+    <div class="card kpi"><small>Forecast next month</small><b>${peso(next[0].value)}</b> <span class="${growth >= 0 ? "up" : "down"}">${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth).toFixed(1)}%</span></div>
     <div class="card kpi"><small>Forecast next 3 months</small><b>${peso(total3)}</b></div>
     <div class="card kpi"><small>Titles to reorder</small><b>${low}</b></div>`;
-
-  $("tbl").innerHTML = `<tr><th>Title</th><th>This month</th><th>Next month (est.)</th><th>Trend</th><th>In stock</th><th>Advice</th></tr>` +
-    perTitle.map(t => `<tr><td>${esc(t.title)}</td><td>${t.last}</td><td>${t.demand}</td><td>${t.trend}</td>
-      <td>${t.stock}${isFinite(t.monthsLeft) ? ` (${t.monthsLeft.toFixed(1)} mo)` : ""}</td>
-      <td>${t.reorder ? `<span class="pill warn">Order ${t.reorder}</span>` : `<span class="pill">OK</span>`}</td></tr>`).join("");
-
-  const cur = $("sel").value;
-  $("sel").innerHTML = perTitle.map(t => `<option>${esc(t.title)}</option>`).join("");
-  if (cur) $("sel").value = cur;
-
+  $("tbl").innerHTML = `<tr><th>Title</th><th>This month</th><th>Next month (est.)</th><th>Trend</th><th>In stock</th><th>Advice</th></tr>` + perTitle.map(t => `<tr><td>${esc(t.title)}</td><td>${t.last}</td><td>${t.demand}</td><td>${t.trend}</td>
+    <td>${t.stock}${isFinite(t.monthsLeft) ? ` (${t.monthsLeft.toFixed(1)} mo)` : ""}</td>
+    <td>${t.reorder ? `<span class="pill warn">Order ${t.reorder}</span>` : `<span class="pill">OK</span>`}</td></tr>`).join("");
+  const cur = $("sel").value; $("sel").innerHTML = perTitle.map(t => `<option>${esc(t.title)}</option>`).join(""); if (cur) $("sel").value = cur;
   drawChart(months, rev);
+  renderOrders(); // BAGONG DAGDAG LANG
 }
 
-function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+// BAGONG DAGDAG LANG - ORDERS RENDER
+function renderOrders() {
+  if (!Backend.getOrders) return;
+  const orders = Backend.getOrders();
+  const stats = Backend.getOrderStats();
+  $("statOrders").textContent = stats.totalOrders;
+  $("statRevenue").textContent = peso(stats.totalRevenue);
+  $("statPending").textContent = stats.pending;
+  $("ordersTbl").innerHTML = `<tr><th>Order ID</th><th>Customer</th><th>Book</th><th>Qty</th><th>Total</th><th>Date</th><th>Status</th><th>Action</th></tr>` + orders.map(o => {
+    const d = new Date(o.date).toLocaleDateString("en-PH", {month:"short", day:"numeric", year:"numeric"});
+    return `<tr><td><b>${o.id}</b></td><td>${esc(o.customer)}<br><small style="color:var(--muted)">${esc(o.email||"")}</small></td><td>${esc(o.title)}</td><td>${o.qty}</td><td>${peso(o.total)}</td><td>${d}</td><td><span class="badge ${o.status}">${o.status}</span></td><td><select onchange="changeStatus('${o.id}', this.value)"><option value="">Change...</option><option value="Pending">Pending</option><option value="Shipped">Shipped</option><option value="Delivered">Delivered</option></select></td></tr>`;
+  }).join("");
+  drawOrderChart(stats.last7);
+}
+function changeStatus(id, status) { if(!status) return; Backend.updateOrderStatus(id, status); renderOrders(); }
+function drawOrderChart(last7) {
+  const W=720,H=220,L=56,R=16,T=16,B=36;
+  const max = Math.max(...last7.map(d=>d.total), 100) * 1.1;
+  const x = i => L + (i*(W-L-R))/(last7.length-1);
+  const y = v => T + (1 - v/max)*(H-T-B);
+  let grid=""; for(let k=0;k<=4;k++){ const v=max*k/4; grid+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">₱${Math.round(v/1000)}k</text>`; }
+  const bars = last7.map((d,i)=>{ const bw=52; const h=H-T-B-(y(d.total)-T); return `<rect x="${x(i)-bw/2}" y="${y(d.total)}" width="${bw}" height="${Math.max(2,h)}" rx="8" fill="#2F5D50"/><text x="${x(i)}" y="${y(d.total)-6}" text-anchor="middle" font-weight="600">${d.total?peso(d.total):""}</text><text x="${x(i)}" y="${H-12}" text-anchor="middle">${d.label}</text>`; }).join("");
+  $("orderChart").innerHTML = `${grid}${bars}`;
+}
 
+function esc(s) { return String(s||"").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 function drawChart(months, rev) {
   const W = 720, H = 280, L = 56, R = 16, T = 16, B = 36;
   const all = [...rev.actual, ...rev.next.map(p => p.hi)];
   const max = Math.max(...all) * 1.08, min = 0;
   const n = 15, x = i => L + (i * (W - L - R)) / (n - 1), y = v => T + (1 - (v - min) / (max - min)) * (H - T - B);
   const labels = [...months, ...nextMonths(3)];
-
   const actual = rev.actual.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join("");
   const avg = rev.trend.map((v, i) => `${i ? "L" : "M"}${x(i)},${y(v)}`).join("");
   const fp = [[11, rev.actual[11]], ...rev.next.map((p, k) => [12 + k, p.value])];
   const fline = fp.map(([i, v], k) => `${k ? "L" : "M"}${x(i)},${y(v)}`).join("");
   const band = [[11, rev.actual[11], rev.actual[11]], ...rev.next.map((p, k) => [12 + k, p.lo, p.hi])];
-  const area = band.map(([i, , hi]) => `${x(i)},${y(hi)}`).join(" ") + " " +
-    [...band].reverse().map(([i, lo]) => `${x(i)},${y(lo)}`).join(" ");
-
-  let grid = "";
-  for (let k = 0; k <= 4; k++) {
-    const v = (max * k) / 4;
-    grid += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/>
-             <text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${Math.round(v / 1000)}k</text>`;
-  }
+  const area = band.map(([i, , hi]) => `${x(i)},${y(hi)}`).join(" ") + " " + [...band].reverse().map(([i, lo]) => `${x(i)},${y(lo)}`).join(" ");
+  let grid = ""; for (let k = 0; k <= 4; k++) { const v = (max * k) / 4; grid += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/> <text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${Math.round(v / 1000)}k</text>`; }
   const xl = labels.map((m, i) => `<text x="${x(i)}" y="${H - 12}" text-anchor="middle">${m}</text>`).join("");
-
-  $("chart").innerHTML = `${grid}${xl}
-    <polygon points="${area}" fill="#C9A24B" opacity=".28"/>
-    <path d="${avg}" fill="none" stroke="#B4471F" stroke-width="2" stroke-dasharray="4 4"/>
-    <path d="${actual}" fill="none" stroke="#2F5D50" stroke-width="3"/>
-    <path d="${fline}" fill="none" stroke="#C9A24B" stroke-width="3"/>
-    ${rev.actual.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#2F5D50"/>`).join("")}
-    ${rev.next.map((p, k) => `<circle cx="${x(12 + k)}" cy="${y(p.value)}" r="4" fill="#C9A24B"/>`).join("")}`;
+  $("chart").innerHTML = `${grid}${xl} <polygon points="${area}" fill="#C9A24B" opacity=".28"/> <path d="${avg}" fill="none" stroke="#B4471F" stroke-width="2" stroke-dasharray="4 4"/> <path d="${actual}" fill="none" stroke="#2F5D50" stroke-width="3"/> <path d="${fline}" fill="none" stroke="#C9A24B" stroke-width="3"/> ${rev.actual.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#2F5D50"/>`).join("")} ${rev.next.map((p, k) => `<circle cx="${x(12 + k)}" cy="${y(p.value)}" r="4" fill="#C9A24B"/>`).join("")}`;
 }
-
-function nextMonths(h) {
-  const d = new Date();
-  return Array.from({ length: h }, (_, k) => new Date(d.getFullYear(), d.getMonth() + 1 + k, 1).toLocaleString("en", { month: "short" }));
-}
-
+function nextMonths(h) { const d = new Date(); return Array.from({ length: h }, (_, k) => new Date(d.getFullYear(), d.getMonth() + 1 + k, 1).toLocaleString("en", { month: "short" })); }
 show();
 </script>
 </body>
