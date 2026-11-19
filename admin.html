@@ -104,7 +104,7 @@ function render() {
   const { months, rev, perTitle } = Backend.analytics(3);
   const low = perTitle.filter(t => t.reorder > 0).length;
 
-  // REAL STATS - real
+  // REAL STATS
   const statsReal = Backend.getOrderStats();
   const ordersReal = Backend.getOrders ? Backend.getOrders() : [];
   const todayTotal = statsReal.last7.length ? statsReal.last7[statsReal.last7.length - 1].total : 0;
@@ -118,7 +118,23 @@ function render() {
     <div class="card kpi"><small>Total Revenue</small><b>${peso(totalRevenueReal)}</b></div>
     <div class="card kpi"><small>Titles to reorder</small><b>${low}</b></div>`;
 
-  $("tbl").innerHTML = `<tr><th>Title</th><th>This month</th><th>Next month (est.)</th><th>Trend</th><th>In stock</th><th>Advice</th></tr>` + perTitle.map(t => `<tr><td>${esc(t.title)}</td><td>${t.last}</td><td>${t.demand}</td><td>${t.trend}</td> <td>${t.stock}${isFinite(t.monthsLeft) ? ` (${t.monthsLeft.toFixed(1)} mo)` : ""}</td> <td>${t.reorder ? `<span class="pill warn">Order ${t.reorder}</span>` : `<span class="pill">OK</span>`}</td></tr>`).join("");
+  // REAL TABLE - galing sa totoong orders, hindi na demo
+  const soldByTitle = {};
+  ordersReal.forEach(o => {
+    const title = o.title || o.name || "Unknown";
+    soldByTitle[title] = soldByTitle[title] || { qty: 0, revenue: 0 };
+    soldByTitle[title].qty += Number(o.qty || 1);
+    soldByTitle[title].revenue += Number(o.price) * Number(o.qty || 1);
+  });
+
+  const realRows = perTitle.map(t => {
+    const real = soldByTitle[t.title] || { qty: 0, revenue: 0 };
+    const need = real.qty > t.stock ? `Order ${real.qty - t.stock}` : `OK`;
+    return `<tr><td>${esc(t.title)}</td><td>${real.qty}</td><td>${peso(real.revenue)}</td><td>${t.stock}</td><td>${real.qty > t.stock ? `<span class="pill warn">${need}</span>` : `<span class="pill">OK</span>`}</td></tr>`;
+  }).join("");
+
+  $("tbl").innerHTML = `<tr><th>Title</th><th>Sold (Real)</th><th>Revenue (Real)</th><th>In stock</th><th>Advice</th></tr>` + realRows;
+
   const cur = $("sel").value;
   $("sel").innerHTML = perTitle.map(t => `<option>${esc(t.title)}</option>`).join("");
   if (cur) $("sel").value = cur;
