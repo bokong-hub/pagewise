@@ -102,21 +102,28 @@ $("reset").onclick = () => { if (confirm("Reset to demo data?")) { Backend.reset
 
 function render() {
   const { months, rev, perTitle } = Backend.analytics(3);
-  const next = rev.next, last = rev.actual[11];
-  const growth = ((next[0].value - last) / last) * 100;
-  const total3 = next.reduce((s, p) => s + p.value, 0);
   const low = perTitle.filter(t => t.reorder > 0).length;
+
+  // REAL STATS - real
+  const statsReal = Backend.getOrderStats();
+  const ordersReal = Backend.getOrders ? Backend.getOrders() : [];
+  const todayTotal = statsReal.last7.length ? statsReal.last7[statsReal.last7.length - 1].total : 0;
+  const last7Total = statsReal.last7.reduce((s, d) => s + d.total, 0);
+  const totalRevenueReal = ordersReal.reduce((s, o) => s + (Number(o.price) * Number(o.qty || 1)), 0);
+
   $("kpis").innerHTML = `
-    <div class="card kpi"><small>This month so far</small><b>${peso(last)}</b></div>
-    <div class="card kpi"><small>Forecast next month</small><b>${peso(next[0].value)}</b> <span class="${growth >= 0 ? "up" : "down"}">${growth >= 0 ? "▲" : "▼"} ${Math.abs(growth).toFixed(1)}%</span></div>
-    <div class="card kpi"><small>Forecast next 3 months</small><b>${peso(total3)}</b></div>
+    <div class="card kpi"><small>Today</small><b>${peso(todayTotal)}</b></div>
+    <div class="card kpi"><small>Last 7 Days</small><b>${peso(last7Total)}</b></div>
+    <div class="card kpi"><small>Total Orders</small><b>${ordersReal.length}</b></div>
+    <div class="card kpi"><small>Total Revenue</small><b>${peso(totalRevenueReal)}</b></div>
     <div class="card kpi"><small>Titles to reorder</small><b>${low}</b></div>`;
-  $("tbl").innerHTML = `<tr><th>Title</th><th>This month</th><th>Next month (est.)</th><th>Trend</th><th>In stock</th><th>Advice</th></tr>` + perTitle.map(t => `<tr><td>${esc(t.title)}</td><td>${t.last}</td><td>${t.demand}</td><td>${t.trend}</td>
-    <td>${t.stock}${isFinite(t.monthsLeft) ? ` (${t.monthsLeft.toFixed(1)} mo)` : ""}</td>
-    <td>${t.reorder ? `<span class="pill warn">Order ${t.reorder}</span>` : `<span class="pill">OK</span>`}</td></tr>`).join("");
-  const cur = $("sel").value; $("sel").innerHTML = perTitle.map(t => `<option>${esc(t.title)}</option>`).join(""); if (cur) $("sel").value = cur;
+
+  $("tbl").innerHTML = `<tr><th>Title</th><th>This month</th><th>Next month (est.)</th><th>Trend</th><th>In stock</th><th>Advice</th></tr>` + perTitle.map(t => `<tr><td>${esc(t.title)}</td><td>${t.last}</td><td>${t.demand}</td><td>${t.trend}</td> <td>${t.stock}${isFinite(t.monthsLeft) ? ` (${t.monthsLeft.toFixed(1)} mo)` : ""}</td> <td>${t.reorder ? `<span class="pill warn">Order ${t.reorder}</span>` : `<span class="pill">OK</span>`}</td></tr>`).join("");
+  const cur = $("sel").value;
+  $("sel").innerHTML = perTitle.map(t => `<option>${esc(t.title)}</option>`).join("");
+  if (cur) $("sel").value = cur;
   drawChart(months, rev);
-  renderOrders(); // BAGONG DAGDAG LANG
+  renderOrders();
 }
 
 // BAGONG DAGDAG LANG - ORDERS RENDER
