@@ -578,15 +578,25 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;paddin
   });
 
   // ===== Add to cart =====
-  document.querySelectorAll('.add-to-cart').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (Backend.isCustomerLoggedIn()) {
-        alert('Added to cart! (demo)');
-      } else {
-        openModal();
-      }
-    });
+document.querySelectorAll('.add-to-cart').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!Backend.isCustomerLoggedIn()) { openModal(); return; }
+    const card = btn.closest('div') || btn.parentElement;
+    const title = btn.dataset.title || btn.dataset.name || (card ? card.querySelector('h3')?.textContent?.trim() : 'Book');
+    const priceText = btn.dataset.price || '';
+    const price = Number(String(priceText).replace(/[^0-9.]/g,'')) || Number(btn.dataset.price) || 0;
+    // Kung 0 pa rin yung price, kunin natin sa text ng card
+    let finalPrice = price;
+    if (!finalPrice && card) {
+      const m = card.textContent.match(/₱\s*([\d,]+)/);
+      if (m) finalPrice = Number(m[1].replace(/,/g,''));
+    }
+    cart.push({ name: title, price: finalPrice });
+    localStorage.setItem("pw_cart", JSON.stringify(cart));
+    updateCartUI();
+    document.getElementById("cartDrawer").style.display = "block";
   });
+});
 
   // ===== Admin PIN =====
   const ADMIN_PIN = "2026";
