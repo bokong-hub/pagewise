@@ -73,6 +73,10 @@ svg text{fill:var(--muted);font:12px Inter,sans-serif}
       <div class="card kpi"><small>Pending Orders</small><b id="statPending">0</b></div>
     </div>
     <div class="scroll"><table id="ordersTbl"></table></div>
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <span id="ordersCount" style="color:var(--muted);font-size:14px"></span>
+      <button type="button" class="btn out" id="toggleOrdersBtn">Show All</button>
+    </div>
   </div>
   <div class="card">
     <h2 style="font-size:22px">Record a sale or restock</h2>
@@ -90,6 +94,7 @@ svg text{fill:var(--muted);font:12px Inter,sans-serif}
 <script>
 const $ = id => document.getElementById(id);
 const peso = n => "₱" + Math.round(n || 0).toLocaleString("en-PH");
+let showAllOrders = false;
 
 function show(){
   const ok = Backend.isAuthed();
@@ -113,6 +118,11 @@ $("loginForm").addEventListener("submit", async e => {
 });
 
 $("authBtn").onclick = () => { Backend.logout(); show(); };
+
+$("toggleOrdersBtn").onclick = () => {
+  showAllOrders = !showAllOrders;
+  render();
+};
 
 function barChart(svgId, labels, values, color){
   const svg = $(svgId);
@@ -143,26 +153,4 @@ function render(){
   data.titles.forEach(t=>{
     const need = Math.max(0, 20 - t.stock);
     const advice = need > 0 ? `Restock +${need} to reach 20` : "Stock OK";
-    tbl += `<tr><td>${t.title}</td><td>${peso(t.price)}</td><td>${t.stock} ${t.stock<=10?'⚠️':''}</td><td>${t.units[11]||0}</td><td>${advice}</td></tr>`;
-  });
-  $("tbl").innerHTML = tbl;
-  if(!orders.length){
-    $("ordersTbl").innerHTML = "<tr><td style='color:#888'>No orders yet.</td></tr>";
-  } else {
-    let o = "<tr><th>ID</th><th>Customer</th><th>Book</th><th>Qty</th><th>Total</th><th>Status</th><th>Action</th></tr>";
-    orders.forEach(ord=>{
-      o += `<tr><td>${ord.id}</td><td>${ord.email || ord.customer || '-'}</td><td>${ord.title}</td><td>${ord.qty}</td><td>${peso(ord.total)}</td><td><span class="badge ${ord.status}">${ord.status}</span></td><td><select onchange="Backend.updateOrderStatus('${ord.id}',this.value);render()"><option ${ord.status==='Pending'?'selected':''}>Pending</option><option ${ord.status==='Shipped'?'selected':''}>Shipped</option><option ${ord.status==='Delivered'?'selected':''}>Delivered</option><option ${ord.status==='Completed'?'selected':''}>Completed</option><option ${ord.status==='Cancelled'?'selected':''}>Cancelled</option></select></td></tr>`;
-    });
-    $("ordersTbl").innerHTML = o;
-  }
-  $("sel").innerHTML = data.titles.map(t=>`<option>${t.title}</option>`).join('');
-}
-
-$("sell").onclick = ()=>{ const t=$("sel").value, q=parseInt($("qty").value,10); if(q>0){ Backend.addSale(t,q); render(); alert("Sale recorded!"); } };
-$("stock").onclick = ()=>{ const t=$("sel").value, q=parseInt($("qty").value,10); if(q>0){ Backend.restock(t,q); render(); alert("Stock added!"); } };
-$("reset").onclick = ()=>{ if(confirm("Clear all orders?")){ Backend.reset(); render(); } };
-
-show();
-</script>
-</body>
-</html>
+    tbl += `<tr><td>${t.title}</td><td>${peso(t.price)}</td><td>${t.stock} ${t.stock<=10?'⚠️':
