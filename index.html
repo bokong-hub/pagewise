@@ -695,7 +695,7 @@ function checkoutCart() {
     Backend.addOrder({ customer: customer, email: email || "", title: item.name, qty: 1, price: Number(item.price) });
   });
   const totalEl = document.getElementById("cartTotal");
-  alert("Order placed! Total: ₱" + (totalEl ? totalEl.textContent : "0") + " - Makikita mo na sa Admin!");
+  alert("Order placed! Total: ₱" + (totalEl ? totalEl.textContent : "0") + );
   localStorage.setItem("pw_cart", "[]");
   if (typeof cart !== "undefined") cart = [];
   updateCartUI();
