@@ -577,24 +577,38 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;paddin
     updateAuthButton(); // refresh the icon + username
   });
 
-  // ===== Add to cart =====
+// ===== Add to cart =====
 document.querySelectorAll('.add-to-cart').forEach(btn => {
   btn.addEventListener('click', () => {
     if (!Backend.isCustomerLoggedIn()) { openModal(); return; }
     const card = btn.closest('div') || btn.parentElement;
     const title = btn.dataset.title || btn.dataset.name || (card ? card.querySelector('h3')?.textContent?.trim() : 'Book');
-    const priceText = btn.dataset.price || '';
-    const price = Number(String(priceText).replace(/[^0-9.]/g,'')) || Number(btn.dataset.price) || 0;
-    // Kung 0 pa rin yung price, kunin natin sa text ng card
-    let finalPrice = price;
+    let finalPrice = Number(String(btn.dataset.price || '').replace(/[^0-9.]/g,'')) || 0;
     if (!finalPrice && card) {
       const m = card.textContent.match(/₱\s*([\d,]+)/);
       if (m) finalPrice = Number(m[1].replace(/,/g,''));
     }
-    cart.push({ name: title, price: finalPrice });
-    localStorage.setItem("pw_cart", JSON.stringify(cart));
-    updateCartUI();
-    document.getElementById("cartDrawer").style.display = "block";
+    let savedCart = [];
+    try { savedCart = JSON.parse(localStorage.getItem("pw_cart") || "[]"); } catch(e) { savedCart = []; }
+    savedCart.push({ name: title, price: finalPrice });
+    localStorage.setItem("pw_cart", JSON.stringify(savedCart));
+    // Update yung cart UI ng direkta, hindi na aasa sa updateCartUI()
+    const countEl = document.getElementById("cartCount");
+    if (countEl) countEl.textContent = savedCart.length;
+    const itemsEl = document.getElementById("cartItems");
+    if (itemsEl) {
+      let html = ""; let total = 0;
+      savedCart.forEach((item, i) => {
+        total += Number(item.price);
+        html += `<p>${item.name} - ₱${item.price} <button onclick="removeCart(${i})">x</button></p>`;
+      });
+      itemsEl.innerHTML = html;
+      const totalEl = document.getElementById("cartTotal");
+      if (totalEl) totalEl.textContent = total;
+    }
+    const drawer = document.getElementById("cartDrawer");
+    if (drawer) drawer.style.display = "block";
+    alert("Added: " + title);
   });
 });
 
