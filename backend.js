@@ -1,12 +1,10 @@
-/* Pagewise Books - backend (runs in the browser, no server).
-   Provides: auth, localStorage data store, and sales stats. */
-// NOTE: Removed "Demo login: admin / Pagewise@2026" and "NOT real security" - anyone could read the password from here
+/* Pagewise Books - backend */
 const Backend = (() => {
-  const KEY = "pw_data_v1", SESSION = "pw_session", LOCK = "pw_lock";
+  const KEY = "pw_data_v1", SESSION = "pw_session";
   const CUSTOMERS_KEY = "pw_customers", CUSTOMER_SESSION = "pw_customer";
   const ORDERS_KEY = "pw_orders_v1";
-  // NOTE: Removed "BAGONG DAGDAG LANG" comment
-  const SESSION_MS = 30 * 60 * 1000, MAX_TRIES = 5, LOCK_MS = 5 * 60 * 1000;
+  const SESSION_MS = 30 * 60 * 1000;
+  const SALT = "pagewise::";
 
   const read = (s, k) => { try { return JSON.parse(s.getItem(k)); } catch { return null; } };
   const write = (s, k, v) => { try { s.setItem(k, JSON.stringify(v)); } catch {} };
@@ -16,60 +14,34 @@ const Backend = (() => {
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
-  /* ---------- ADMIN AUTH ---------- */
-  // NOTE: THIS IS THE FIX FOR YOUR LOGIN PROBLEM
-  // Before: it used a hash (8464d...) for "Pagewise@2026" - hard to type, easy to mistype @ / capital P, and it kept locking you out.
-  // Now: simple direct check. No hash, no crypto.subtle needed, so it works even if HTTPS check fails.
-  // NEW LOGIN:
-  // Username: admin
-  // Password: admin123
+  /* ---------- ADMIN AUTH - FIXED: NO LOCK ANYMORE ---------- */
+  // FIX: Tinanggal ko yung LOCK. Yan yung dahilan kung bakit ayaw gumana kahit tama password mo.
+  // NEW LOGIN: admin / admin123
   async function login(user, pass) {
-    const lock = read(localStorage, LOCK) || { tries: 0, until: 0 };
-    if (Date.now() < lock.until) {
-      return { ok: false, error: `Too many attempts. Try again in ${Math.ceil((lock.until - Date.now()) / 60000)} min.` };
+    if (user.trim() === "admin" && pass === "admin123") {
+      write(sessionStorage, SESSION, { user: "admin", exp: Date.now() + SESSION_MS });
+      return { ok: true };
     }
-    const good = user.trim() === "admin" && pass === "admin123";
-    if (!good) {
-      lock.tries++;
-      if (lock.tries >= MAX_TRIES) { lock.until = Date.now() + LOCK_MS; lock.tries = 0; }
-      write(localStorage, LOCK, lock);
-      return { ok: false, error: "Wrong username or password." };
-    }
-    write(localStorage, LOCK, { tries: 0, until: 0 });
-    write(sessionStorage, SESSION, { user: "admin", exp: Date.now() + SESSION_MS });
-    return { ok: true };
+    return { ok: false, error: "Wrong username or password." };
   }
-
-  const isAuthed = () => {
-    const s = read(sessionStorage, SESSION);
-    return !!(s && s.exp > Date.now());
-  };
+  const isAuthed = () => { const s = read(sessionStorage, SESSION); return !!(s && s.exp > Date.now()); };
   const logout = () => { try { sessionStorage.removeItem(SESSION); } catch {} };
 
-  // NOTE: New helper - if you get locked again, you can call Backend.unlock() in Console to clear the lock instantly
-  const unlock = () => { try { localStorage.removeItem(LOCK); } catch {} return { ok: true }; };
-
   /* ---------- CUSTOMER AUTH ---------- */
-  // NOTE: Customer passwords still use hash - this part is unchanged, only admin login was simplified
-  const SALT = "pagewise::";
   function getCustomers() { return read(localStorage, CUSTOMERS_KEY) || []; }
   function saveCustomers(list) { write(localStorage, CUSTOMERS_KEY, list); }
-
   async function customerRegister(email, password) {
     email = email.trim().toLowerCase();
     if (!email || !password) return { ok: false, error: "Email and password are required." };
     if (password.length < 4) return { ok: false, error: "Password must be at least 4 characters." };
     const customers = getCustomers();
-    if (customers.find(c => c.email === email)) {
-      return { ok: false, error: "An account with this email already exists." };
-    }
+    if (customers.find(c => c.email === email)) return { ok: false, error: "An account with this email already exists." };
     const hash = await sha256(SALT + password);
     customers.push({ email, hash, created: Date.now() });
     saveCustomers(customers);
     write(localStorage, CUSTOMER_SESSION, { email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 });
     return { ok: true };
   }
-
   async function customerLogin(email, password) {
     email = email.trim().toLowerCase();
     if (!email || !password) return { ok: false, error: "Email and password are required." };
@@ -81,189 +53,75 @@ const Backend = (() => {
     write(localStorage, CUSTOMER_SESSION, { email, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 });
     return { ok: true };
   }
-
   function customerLogout() { try { localStorage.removeItem(CUSTOMER_SESSION); } catch {} }
-  function isCustomerLoggedIn() {
-    const s = read(localStorage, CUSTOMER_SESSION);
-    return !!(s && s.exp > Date.now());
-  }
-  function getCurrentCustomer() {
-    const s = read(localStorage, CUSTOMER_SESSION);
-    return (s && s.exp > Date.now()) ? s.email : null;
-  }
+  function isCustomerLoggedIn() { const s = read(localStorage, CUSTOMER_SESSION); return !!(s && s.exp > Date.now()); }
+  function getCurrentCustomer() { const s = read(localStorage, CUSTOMER_SESSION); return (s && s.exp > Date.now()) ? s.email : null; }
 
   /* ---------- DATA STORE ---------- */
-  const monthLabels = () => {
-    const out = [], d = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
-      out.push(m.toLocaleString("en", { month: "short" }));
-    }
-    return out;
-  };
-
-  // NOTE: Before, seed() generated fake sales history with random numbers (30, 24, 18, 20 + random).
-  // That is why your dashboard showed fake sales even with 0 orders.
-  // Now: units start at 0. Only real sales from addSale / addOrder will increase them.
+  const monthLabels = () => { const out = [], d = new Date(); for (let i = 11; i >= 0; i--) { const m = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(m.toLocaleString("en", { month: "short" })); } return out; };
   function seed() {
     const titles = [
       ["The Lantern Keeper", 420, 38],
       ["Salt & Hollow Hills", 380, 22],
       ["A Quiet Orchard", 450, 15],
       ["Midnight at the Station", 399, 60],
-    ].map(([title, price, stock]) => ({
-      title, price, stock,
-      units: Array(12).fill(0)
-    }));
+    ].map(([title, price, stock]) => ({ title, price, stock, units: Array(12).fill(0) }));
     return { titles };
   }
-
-  function load() {
-    let d = read(localStorage, KEY);
-    if (!d) { d = seed(); write(localStorage, KEY, d); }
-    return d;
-  }
-
+  function load() { let d = read(localStorage, KEY); if (!d) { d = seed(); write(localStorage, KEY, d); } return d; }
   const getData = () => ({ ...load(), months: monthLabels() });
-
-  function addSale(title, qty) {
-    const d = load(), t = d.titles.find(x => x.title === title);
-    if (!t || !(qty > 0)) return false;
-    t.units[11] += qty;
-    t.stock = Math.max(0, t.stock - qty);
-    write(localStorage, KEY, d);
-    return true;
-  }
-
-  function restock(title, qty) {
-    const d = load(), t = d.titles.find(x => x.title === title);
-    if (!t || !(qty > 0)) return false;
-    t.stock += qty;
-    write(localStorage, KEY, d);
-    return true;
-  }
-
-  // NOTE: Before, reset() restored the fake seed data AND fake orders.
-  // Now, "Clear Orders" only clears orders + lock. It does NOT reset your stock.
-  const reset = () => {
-    write(localStorage, ORDERS_KEY, []);
-    try { localStorage.removeItem(LOCK); } catch {}
-  };
+  function addSale(title, qty) { const d = load(), t = d.titles.find(x => x.title === title); if (!t || !(qty > 0)) return false; t.units[11] += qty; t.stock = Math.max(0, t.stock - qty); write(localStorage, KEY, d); return true; }
+  function restock(title, qty) { const d = load(), t = d.titles.find(x => x.title === title); if (!t || !(qty > 0)) return false; t.stock += qty; write(localStorage, KEY, d); return true; }
+  const reset = () => { write(localStorage, ORDERS_KEY, []); };
 
   /* ---------- ORDERS ---------- */
-  // NOTE: Empty by default - no more fake Juan / Maria / Jose / Ana / Pedro orders.
-  // Orders only appear when a real customer orders from your shop.
-  function seedOrders() { return []; }
-
-  function getOrders() {
-    let o = read(localStorage, ORDERS_KEY);
-    if (!o) { o = seedOrders(); write(localStorage, ORDERS_KEY, o); }
-    return o;
-  }
-
+  function getOrders() { let o = read(localStorage, ORDERS_KEY); if (!o) { o = []; write(localStorage, ORDERS_KEY, o); } return o; }
   function addOrder(order) {
     const orders = getOrders();
-    // NOTE: Before, ID was based on orders.length + 1, so after clearing it would reuse PW-1001 and duplicate.
-    // Now, ID is based on the highest existing ID, so it never duplicates.
-    const maxNum = orders.reduce((m, o) => {
-      const n = parseInt(String(o.id).replace("PW-", ""), 10);
-      return isNaN(n) ? m : Math.max(m, n);
-    }, 1000);
+    const maxNum = orders.reduce((m, o) => { const n = parseInt(String(o.id).replace("PW-", ""), 10); return isNaN(n) ? m : Math.max(m, n); }, 1000);
     const id = "PW-" + (maxNum + 1);
     const newOrder = { id, date: Date.now(), status: "Pending", ...order, total: order.qty * order.price };
-    orders.unshift(newOrder);
-    write(localStorage, ORDERS_KEY, orders);
-    // NOTE: Keep chart data in sync
+    orders.unshift(newOrder); write(localStorage, ORDERS_KEY, orders);
     addSale(order.title, order.qty);
     return newOrder;
   }
-
-  function updateOrderStatus(id, status) {
-    const orders = getOrders();
-    const o = orders.find(x => x.id === id);
-    if (!o) return false;
-    o.status = status;
-    write(localStorage, ORDERS_KEY, orders);
-    return true;
-  }
-
+  function updateOrderStatus(id, status) { const orders = getOrders(); const o = orders.find(x => x.id === id); if (!o) return false; o.status = status; write(localStorage, ORDERS_KEY, orders); return true; }
   function getOrderStats() {
     const orders = getOrders();
     const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
     const totalOrders = orders.length;
     const pending = orders.filter(o => o.status === "Pending").length;
-    // NOTE: Sales per day (last 7 days)
     const last7 = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
       const label = d.toLocaleDateString("en", { month: "short", day: "numeric" });
-      const dayTotal = orders.filter(o => {
-        const od = new Date(o.date);
-        return od.toDateString() === d.toDateString();
-      }).reduce((s, o) => s + o.total, 0);
+      const dayTotal = orders.filter(o => { const od = new Date(o.date); return od.toDateString() === d.toDateString(); }).reduce((s, o) => s + o.total, 0);
       last7.push({ label, total: dayTotal });
     }
     return { totalRevenue, totalOrders, pending, last7 };
   }
 
   /* ---------- ANALYTICS ---------- */
-  // NOTE: Kept for compatibility with admin.html, but it no longer creates fake "demand 86" numbers.
-  // perTitle now returns only stock - the admin page calculates its own practical reorder advice (Target 20).
-  function analytics(h = 3) {
+  function analytics() {
     const { titles, months } = getData();
     const revenue = months.map((_, i) => titles.reduce((s, t) => s + t.units[i] * t.price, 0));
-    const perTitle = titles.map(t => ({
-      title: t.title,
-      stock: t.stock,
-      last: t.units[11],
-      demand: t.units[11],
-      trend: "steady",
-      monthsLeft: Infinity,
-      reorder: 0
-    }));
+    const perTitle = titles.map(t => ({ title: t.title, stock: t.stock, last: t.units[11], demand: t.units[11], trend: "steady", monthsLeft: Infinity, reorder: 0 }));
     return { months, rev: { actual: revenue }, perTitle };
   }
 
   /* ---------- CUSTOMER PROFILE ---------- */
-  function getCustomerProfile() {
-    const email = getCurrentCustomer();
-    if (!email) return null;
-    const customers = getCustomers();
-    return customers.find(c => c.email === email) || null;
-  }
-
+  function getCustomerProfile() { const email = getCurrentCustomer(); if (!email) return null; const customers = getCustomers(); return customers.find(c => c.email === email) || null; }
   function updateCustomerProfile(username) {
-    const email = getCurrentCustomer();
-    if (!email) return { ok: false, error: "Not logged in." };
+    const email = getCurrentCustomer(); if (!email) return { ok: false, error: "Not logged in." };
     username = username.trim();
-    if (!username || username.length < 2) {
-      return { ok: false, error: "Username must be at least 2 characters." };
-    }
-    if (username.length > 20) {
-      return { ok: false, error: "Username is too long (max 20 characters)." };
-    }
-    const customers = getCustomers();
-    const user = customers.find(c => c.email === email);
+    if (!username || username.length < 2) return { ok: false, error: "Username must be at least 2 characters." };
+    if (username.length > 20) return { ok: false, error: "Username is too long (max 20 characters)." };
+    const customers = getCustomers(); const user = customers.find(c => c.email === email);
     if (!user) return { ok: false, error: "Account not found." };
-    if (customers.some(c => c.username && c.username.toLowerCase() === username.toLowerCase() && c.email !== email)) {
-      return { ok: false, error: "This username is already taken." };
-    }
-    user.username = username;
-    saveCustomers(customers);
-    return { ok: true };
+    if (customers.some(c => c.username && c.username.toLowerCase() === username.toLowerCase() && c.email !== email)) return { ok: false, error: "This username is already taken." };
+    user.username = username; saveCustomers(customers); return { ok: true };
   }
+  function hasProfile() { const profile = getCustomerProfile(); return !!(profile && profile.username); }
 
-  function hasProfile() {
-    const profile = getCustomerProfile();
-    return !!(profile && profile.username);
-  }
-
-  return {
-    login, logout, isAuthed, unlock,
-    getData, addSale, restock, reset, analytics,
-    customerRegister, customerLogin, customerLogout, isCustomerLoggedIn, getCurrentCustomer,
-    getCustomerProfile, updateCustomerProfile, hasProfile,
-    // NOTE: Removed "BAGONG DAGDAG LANG" comment
-    getOrders, addOrder, updateOrderStatus, getOrderStats
-  };
+  return { login, logout, isAuthed, getData, addSale, restock, reset, analytics, customerRegister, customerLogin, customerLogout, isCustomerLoggedIn, getCurrentCustomer, getCustomerProfile, updateCustomerProfile, hasProfile, getOrders, addOrder, updateOrderStatus, getOrderStats };
 })();
