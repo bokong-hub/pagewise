@@ -163,6 +163,10 @@ function drawChart(months, rev) {
 }
 function nextMonths(h) { const d = new Date(); return Array.from({ length: h }, (_, k) => new Date(d.getFullYear(), d.getMonth() + 1 + k, 1).toLocaleString("en", { month: "short" })); }
 show();
+// LIVE GRAPH - mag u-update every 3 secs
+setInterval(() => {
+  if (Backend.isAuthed()) render();
+}, 3000);
 </script>
 </body>
 </html>
