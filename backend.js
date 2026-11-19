@@ -17,11 +17,13 @@ const Backend = (() => {
   /* ---------- ADMIN AUTH - FIXED: NO LOCK ANYMORE ---------- */
   // FIX: Tinanggal ko yung LOCK. Yan yung dahilan kung bakit ayaw gumana kahit tama password mo.
   // NEW LOGIN: admin / admin123
-  async function login(user, pass) {
-    if (user.trim() === "admin" && pass === "admin123") {
-      write(sessionStorage, SESSION, { user: "admin", exp: Date.now() + SESSION_MS });
-      return { ok: true };
-    }
+ async function login(user, pass) {
+  if (user.trim() === "admin" && pass === "admin123") {
+    write(sessionStorage, SESSION, { user: "admin", exp: Date.now() + SESSION_MS });
+    return { ok: true };
+  }
+  return { ok: false, error: "Wrong username or password." };
+}
     return { ok: false, error: "Wrong username or password." };
   }
   const isAuthed = () => { const s = read(sessionStorage, SESSION); return !!(s && s.exp > Date.now()); };
