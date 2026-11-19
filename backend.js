@@ -81,19 +81,11 @@ const Backend = (() => {
   }
   const reset = () => { write(localStorage, KEY, seed()); write(localStorage, ORDERS_KEY, seedOrders()); };
 
-  /* ---------- ORDERS - BAGONG DAGDAG LANG, HINDI BINURA YUNG LUMA ---------- */
-  // Ito yung database ng orders niyo. Kayo-kayo lang na peke na tao.
-  function seedOrders() {
-    const now = Date.now();
-    const day = 24*60*60*1000;
-    return [
-      { id: "PW-1001", customer: "Juan Dela Cruz", email: "juan@test.com", title: "The Lantern Keeper", qty: 2, price: 420, total: 840, status: "Delivered", date: now - 6*day },
-      { id: "PW-1002", customer: "Maria Santos", email: "maria@test.com", title: "Midnight at the Station", qty: 1, price: 399, total: 399, status: "Delivered", date: now - 5*day },
-      { id: "PW-1003", customer: "Jose Rizal", email: "jose@test.com", title: "Salt & Hollow Hills", qty: 3, price: 380, total: 1140, status: "Shipped", date: now - 3*day },
-      { id: "PW-1004", customer: "Ana Reyes", email: "ana@test.com", title: "A Quiet Orchard", qty: 1, price: 450, total: 450, status: "Pending", date: now - 1*day },
-      { id: "PW-1005", customer: "Pedro Penduko", email: "pedro@test.com", title: "The Lantern Keeper", qty: 1, price: 420, total: 420, status: "Pending", date: now },
-    ];
-  }
+  /* ---------- ORDERS ---------- */
+ 
+ function seedOrders() {
+  return [];
+}
   function getOrders() {
     let o = read(localStorage, ORDERS_KEY);
     if (!o) { o = seedOrders(); write(localStorage, ORDERS_KEY, o); }
