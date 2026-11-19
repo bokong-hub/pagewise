@@ -218,6 +218,25 @@ $("sell").onclick = ()=>{ const t=$("sel").value, q=parseInt($("qty").value,10);
 $("stock").onclick = ()=>{ const t=$("sel").value, q=parseInt($("qty").value,10); if(q>0){ Backend.restock(t,q); render(); alert("Stock added!"); } };
 $("reset").onclick = ()=>{ if(confirm("Clear all orders?")){ Backend.reset(); render(); } };
 show();
+
+// AUTO-REFRESH: 3 SECONDS LANG
+let lastOrderCount = Backend.getOrders().length;
+setInterval(()=>{
+  if(!Backend.isAuthed()) return;
+  const now = Backend.getOrders().length;
+  if(now !== lastOrderCount){
+    lastOrderCount = now;
+    render();
+    const msg = document.getElementById("stockMsg");
+    if(msg) msg.textContent = "🔔 May bagong order! Check mo sa baba.";
+  } else {
+    render();
+  }
+}, 3000);
+
+// PAKITA AGAD LAHAT NG ORDERS, HINDI LANG 5
+let showAllOrders = true;
+render();
 </script>
 </body>
 </html>
