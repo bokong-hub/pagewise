@@ -639,5 +639,32 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;paddin
   updateAuthButton();
 })();
 </script>
+  <div id="cartDrawer" style="display:none; position:fixed; top:0; right:0; width:320px; height:100%; background:white; box-shadow:-2px 0 10px rgba(0,0,0,0.2); padding:20px; z-index:9999; overflow-y:auto;">
+  <h3>Your Cart 🛒</h3>
+  <div id="cartItems"></div>
+  <p><b>Total: ₱<span id="cartTotal">0</span></b></p>
+  <button onclick="checkoutCart()" style="width:100%; padding:12px; background:#2a7a6b; color:white; border:none; border-radius:10px; font-weight:bold;">Checkout</button>
+  <button onclick="closeCart()" style="width:100%; padding:10px; margin-top:8px; background:#eee; border:none; border-radius:10px;">Close</button>
+</div>
+
+<script>
+let cart = JSON.parse(localStorage.getItem("pw_cart") || "[]");
+function updateCartUI() {
+  document.getElementById("cartCount").textContent = cart.length;
+  let html = ""; let total = 0;
+  cart.forEach((item, i) => {
+    total += Number(item.price);
+    html += `<p>${item.name} - ₱${item.price} <button onclick="removeCart(${i})">x</button></p>`;
+  });
+  if(cart.length === 0) html = "<p>Empty pa yung cart mo.</p>";
+  document.getElementById("cartItems").innerHTML = html;
+  document.getElementById("cartTotal").textContent = total;
+}
+function removeCart(i) { cart.splice(i,1); localStorage.setItem("pw_cart", JSON.stringify(cart)); updateCartUI(); }
+function checkoutCart() { if(cart.length===0) return alert("Empty pa cart mo!"); alert("Order placed! Total: ₱" + document.getElementById("cartTotal").textContent); cart=[]; localStorage.setItem("pw_cart","[]"); updateCartUI(); closeCart(); }
+function closeCart() { document.getElementById("cartDrawer").style.display = "none"; }
+document.getElementById("cartBtn").onclick = function() { document.getElementById("cartDrawer").style.display = "block"; };
+updateCartUI();
+</script>
 </body>
 </html>
