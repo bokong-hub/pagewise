@@ -128,6 +128,96 @@ function show() {
   }
 }
 
+<script src="backend.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const peso = n => "₱" + Math.round(n || 0).toLocaleString("en-PH");
+let showAllOrders = false;
+
+function show(){
+  const ok = Backend.isAuthed();
+  $("login").classList.toggle("hide", ok);
+  $("dash").classList.toggle("hide", !ok);
+  const authBtn = $("authBtn");
+  if(ok){
+    authBtn.textContent = "Log out";
+    authBtn.className = "btn out";
+    authBtn.onclick = () => { Backend.logout(); show(); };
+    render();
+  } else {
+    authBtn.textContent = "Log in";
+    authBtn.className = "btn out";
+    authBtn.onclick = () => { $("login").classList.remove("hide"); $("dash").classList.add("hide"); };
+  }
+}
+
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const r = await Backend.login($("u").value
+  $("err").textContent = "";
+  const r = await Backend.login($("u").value, $("p").value);
+  if(r.ok){ $("u").value=""; $("p").value=""; show(); }
+  else { $("err").textContent = r.error || "Wrong username or password."; }
+});
+
+function barChart(svgId, labels, values, color){
+  const svg = $(svgId);
+  const W = 720, H = svgId === 'chart' ? 280 : 220, pad = 36;
+  const max = Math.max(1, ...values);
+  let bars = "";
+  const bw = (W - pad*2) / Math.max(1, labels.length);
+  values.forEach((v,i)=>{
+    const h = (v / max) * (H - pad*2);
+    const x = pad + i*bw + bw*0.2;
+    const y = H - pad - h;
+    bars += `<rect x="${x}" y="${y}" width="${bw*0.6}" height="${h}" rx="6" fill="${color}"></rect><text x="${x + bw*0.3}" y="${H-10}" text-anchor="middle">${labels[i]}</text><text x="${x + bw*0.3}" y="${y-6}" text-anchor="middle">${v ? peso(v) : ''}</text>`;
+  });
+  svg.innerHTML = bars;
+}
+
+function render(){
+  const stats = Backend.getOrderStats();
+  const data = Backend.getData();
+  const orders = Backend.getOrders();
+  $("statOrders").textContent = stats.totalOrders;
+  $("statRevenue").textContent = peso(stats.totalRevenue);
+  $("statPending").textContent = stats.pending;
+  $("kpis").innerHTML = `<div class="card kpi"><small>Total Revenue</small><b>${peso(stats.totalRevenue)}</b></div><div class="card kpi"><small>Total Orders</small><b>${stats.totalOrders}</b></div><div class="card kpi"><small>Pending Orders</small><b>${stats.pending}</b></div><div class="card kpi"><small>Books in Stock</small><b>${data.titles.reduce((s,t)=>s+t.stock,0)}</b></div>`;
+  barChart('chart', stats.last7.map(d=>d.label), stats.last7.map(d=>d.total), '#2F5D50');
+  barChart('orderChart', stats.last7.map(d=>d.label), stats.last7.map(d=>d.total), '#C9A24B');
+  let tbl = "<tr><th>Title</th><th>Price</th><th>Stock</th><th>Sold Today</th><th>Advice</th></tr>";
+  data.titles.forEach(t=>{
+    const need = Math.max(0, 20 - t.stock);
+    tbl += `<tr><td>${t.title}</td><td>${peso(t.price)}</td><td>${t.stock} ${t.stock<=10?'⚠️':''}</td><td>${t.units[11]||0}</td><td>${need>0?`Restock +${need} to reach 20`:"Stock OK"}</td></tr>`;
+  });
+  $("tbl").innerHTML = tbl;
+
+  if(!orders.length){
+    $("ordersTbl").innerHTML = "<tr><td>No orders yet.</td></tr>";
+  } else {
+    const visible = showAllOrders ? orders : orders.slice(0, 5);
+    let o = "<tr><th>ID</th><th>Customer</th><th>Book</th><th>Qty</th><th>Total</th><th>Status</th><th>Action</th></tr>";
+    visible.forEach(ord=>{
+      o += `<tr><td>${ord.id}</td><td>${ord.email||ord.customer||'-'}</td><td>${ord.title}</td><td>${ord.qty}</td><td>${peso(ord.total)}</td><td><span class="badge ${ord.status}">${ord.status}</span></td><td><select onchange="Backend.updateOrderStatus('${ord.id}',this.value);render()"><option ${ord.status==='Pending'?'selected':''}>Pending</option><option ${ord.status==='Shipped'?'selected':''}>Shipped</option><option ${ord.status==='Delivered'?'selected':''}>Delivered</option><option ${ord.status==='Completed'?'selected':''}>Completed</option><option ${ord.status==='Cancelled'?'selected':''}>Cancelled</option></select></td></tr>`;
+    });
+    $("ordersTbl").innerHTML = o;
+    // lagyan ng Show All button sa baba ng table kung wala pa
+    let btn = $("toggleOrdersBtn");
+    if(!btn && orders.length > 5){
+      const div = document.createElement("div");
+      div.className = "row";
+      div.innerHTML = `<span style="color:var(--muted);font-size:14px">Showing ${visible.length} of ${orders.length} orders</span><button type="button" class="btn out" id="toggleOrdersBtn">${showAllOrders?"Show Less":"Show All"}</button>`;
+      $("ordersTbl").parentElement.after(div);
+      $("toggleOrdersBtn").onclick = () => { showAllOrders = !showAllOrders; render(); };
+    } else if(btn){
+      btn.textContent = showAllOrders ? "Show Less" : "Show All";
+    }
+  }
+  $("sel").innerHTML = data.titles.map(t=>`<option>${t.title}</option>`).join('');
+}
+$("sell").onclick = ()=>{ const t=$("sel").value, q=parseInt($("qty").value,10); if(q>0){ Backend.addSale(t,q); render(); alert("Sale recorded!"); } };
+$("stock").onclick = ()=>{ const t=$("sel").value, q=parseInt($("qty").value,10); if(q>0){ Backend.restock(t,q); render(); alert("Stock added!"); } };
+$("reset").onclick = ()=>{ if(confirm("Clear all orders?")){ Backend.reset(); render(); } };
+show();
+</script>
+</body>
+</html>
