@@ -702,7 +702,7 @@ function removeCart(i) { cart.splice(i,1); localStorage.setItem("pw_cart", JSON.
 function checkoutCart() {
   let savedCart = [];
   try { savedCart = JSON.parse(localStorage.getItem("pw_cart") || "[]"); } catch(e) { savedCart = []; }
-  if (savedCart.length === 0) return alert("Empty pa cart mo!");
+  if (savedCart.length === 0) return alert("Your cart is empty!");
   const email = (typeof Backend !== "undefined" && Backend.getCurrentCustomer) ? Backend.getCurrentCustomer() : null;
   const customer = email || "Guest";
   savedCart.forEach(item => {
