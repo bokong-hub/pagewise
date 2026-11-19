@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Non-fiction | Pagewise Books</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F1E7; --ink:#1F2A28; --green:#2F5D50; --green-dark:#244a40;
+  --clay:#B4471F; --gold:#C9A24B; --sand:#E6D8BE;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.55}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0}
+.nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:20px 0}
+.logo{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:24px}
+.nav nav{display:flex;flex-wrap:wrap;align-items:center;gap:20px}
+.nav nav a:hover{color:var(--clay)}
+.nav-login{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 16px;border-radius:999px;font-weight:600;font-size:14px;border:2px solid var(--green);color:var(--green);background:transparent;cursor:pointer;font-family:inherit}
+.nav-login:hover{background:#E6E9DC}
+.section{padding:40px 0 64px}
+.section h1{font-size:40px;margin-bottom:8px}
+.section .sub{margin:0 0 32px;color:#4a5754}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.card{background:#fff;border-radius:16px;padding:16px;transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(31,42,40,.12)}
+.card svg{width:100%;height:auto;display:block;border-radius:8px}
+.card h3{font-size:18px;margin:14px 0 2px}
+.card .author{color:#4a5754;font-size:15px}
+.card .price{display:block;margin-top:8px;font-weight:600;color:var(--clay)}
+.card .add-to-cart{margin-top:14px;width:100%;min-height:40px;padding:0 16px;border-radius:999px;border:2px solid var(--green);background:transparent;color:var(--green);font-weight:600;font-size:14px;font-family:inherit;cursor:pointer;transition:background .15s,color .15s}
+.card .add-to-cart:hover{background:var(--green);color:#fff}
+.back{display:inline-flex;align-items:center;gap:6px;font-weight:500;margin-bottom:24px;color:var(--green)}
+.back:hover{color:var(--green-dark)}
+footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:24px 0 40px;margin-top:40px;border-top:1px solid #d8cfbc}
+
+/* Modal styles */
+.modal-overlay{position:fixed;inset:0;background:rgba(31,42,40,.45);display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{background:var(--paper);border-radius:20px;padding:28px 28px 32px;width:100%;max-width:380px;box-shadow:0 20px 50px rgba(31,42,40,.2);position:relative;transform:translateY(12px);transition:transform .2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-header h2{font-size:26px;font-weight:700}
+.modal-close{background:none;border:0;font-size:22px;line-height:1;cursor:pointer;color:var(--ink);opacity:.6;padding:4px 8px;border-radius:8px}
+.modal-close:hover{opacity:1;background:rgba(0,0,0,.06)}
+.modal-tabs{display:flex;background:#EDE6D6;border-radius:999px;padding:4px;margin-bottom:24px}
+.modal-tab{flex:1;text-align:center;padding:10px 12px;border-radius:999px;border:0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;background:transparent;color:var(--ink);transition:background .15s,color .15s}
+.modal-tab.active{background:var(--green);color:#fff}
+.modal-tab:not(.active):hover{background:rgba(0,0,0,.05)}
+.modal-form label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;color:var(--ink)}
+.modal-form .field{margin-bottom:16px}
+.modal-form input[type="email"],.modal-form input[type="password"],.modal-form input[type="text"]{width:100%;min-height:46px;padding:0 16px;border-radius:12px;border:1.5px solid #d4cbb8;background:#fff;font-size:15px;font-family:inherit;color:var(--ink);outline:none;transition:border-color .15s}
+.modal-form input:focus{border-color:var(--green)}
+.modal-form .show-pass{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:12px;cursor:pointer}
+.modal-form .show-pass input{width:16px;height:16px;accent-color:var(--green);cursor:pointer}
+.modal-form .btn-submit{width:100%;min-height:48px;border-radius:999px;border:0;background:var(--green);color:#fff;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
+.modal-form .btn-submit:hover{background:var(--green-dark)}
+.modal-form .confirm-field{display:none}
+.modal-form.mode-signup .confirm-field{display:block}
+
+@media (max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.grid-4{grid-template-columns:1fr}.section h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="nav">
+   <a class="logo" href="landing.html">Pagewise Books</a>
+   <nav aria-label="Main">
+  <a href="#books">New arrivals</a>
+  <a href="#shelves">Shelves</a>
+  <a href="#visit">Visit</a>
+  <a href="#news">Newsletter</a>
+
+  <!-- Profile icon (only visible when logged in) -->
+  <button type="button" id="profileBtn" class="nav-login" style="display:none; gap:8px; padding:0 14px;">
+    <span id="profileIcon" style="
+      width:28px; height:28px; border-radius:50%;
+      background:var(--green); color:#fff;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:600;
+    "></span>
+    <span id="profileName"></span>
+  </button>
+
+  <button type="button" class="nav-login" id="openLogin">Log in</button>
+</nav>
+  </header>
+
+  <section class="section">
+    <a class="back" href="landing.html">← Back to shelves</a>
+    <h1>Non-fiction</h1>
+    <p class="sub">Ideas, history, self-help and more</p>
+
+    <div class="grid-4">
+      <article class="card">
+        <svg viewBox="0 0 200 280"><rect width="200" height="280" fill="#1F2A28"/><rect x="40" y="50" width="120" height="8" fill="#C9A24B"/><rect x="40" y="80" width="90" height="8" fill="#F6F1E7"/><rect x="40" y="110" width="110" height="8" fill="#4E8A6F"/><rect x="40" y="140" width="70" height="8" fill="#B4471F"/></svg>
+        <h3>How We Remember</h3>
+        <div class="author">Dr. Lila Hart</div>
+        <span class="price">₱480</span>
+        <button type="button" class="add-to-cart">Add to cart</button>
+      </article>
+      <article class="card">
+        <svg viewBox="0 0 200 280"><rect width="200" height="280" fill="#B4471F"/><circle cx="100" cy="100" r="50" fill="#F6F1E7" opacity=".85"/><path d="M60 180 H140 V220 H60Z" fill="#1F2A28"/></svg>
+        <h3>City of Stories</h3>
+        <div class="author">Marcus Quinn</div>
+        <span class="price">₱430</span>
+        <button type="button" class="add-to-cart">Add to cart</button>
+      </article>
+      <article class="card">
+        <svg viewBox="0 0 200 280"><rect width="200" height="280" fill="#2F5D50"/><rect x="30" y="60" width="140" height="160" rx="6" fill="#E6D8BE"/><circle cx="100" cy="120" r="30" fill="#C9A24B"/></svg>
+        <h3>Small Habits, Big Days</h3>
+        <div class="author">Nora Kim</div>
+        <span class="price">₱350</span>
+        <button type="button" class="add-to-cart">Add to cart</button>
+      </article>
+      <article class="card">
+        <svg viewBox="0 0 200 280"><rect width="200" height="280" fill="#C9A24B"/><path d="M0 200 Q50 120 100 200 T200 180 V280 H0Z" fill="#1F2A28"/><circle cx="150" cy="70" r="28" fill="#F6F1E7"/></svg>
+        <h3>Maps of the Mind</h3>
+        <div class="author">Samuel Ortega</div>
+        <span class="price">₱460</span>
+        <button type="button" class="add-to-cart">Add to cart</button>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    <span class="logo" style="font-size:18px">Pagewise Books</span>
+    <span>© 2026 Pagewise Books. All rights reserved.</span>
+  </footer>
+</div>
+
+<!-- Login Modal -->
+<div class="modal-overlay" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Log in</h2>
+      <button type="button" class="modal-close" id="closeLogin" aria-label="Close">×</button>
+    </div>
+    <div class="modal-tabs">
+      <button type="button" class="modal-tab active" data-mode="login">Log in</button>
+      <button type="button" class="modal-tab" data-mode="signup">Create account</button>
+    </div>
+    <form class="modal-form" id="authForm" onsubmit="event.preventDefault()">
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" required autocomplete="current-password">
+      </div>
+      <div class="field confirm-field">
+        <label for="authConfirm">Confirm password</label>
+        <input type="password" id="authConfirm" autocomplete="new-password">
+      </div>
+      <label class="show-pass">
+        <input type="checkbox" id="showPassword">
+        Show password
+      </label>
+      <p style="margin:0 0 18px;font-size:14px">
+        <a href="#" id="adminLink" style="color:var(--green);font-weight:500;text-decoration:underline">Are you an admin?</a>
+      </p>
+      <button type="submit" class="btn-submit" id="authSubmit">Log in</button>
+    </form>
+  </div>
+</div>
+
+<!-- Create Profile Modal -->
+<div class="modal-overlay" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="profileTitle">Create your profile</h2>
+    </div>
+    <p style="margin:0 0 20px;font-size:15px;color:#4a5754">
+      Choose a username that will appear on your account.
+    </p>
+    <form id="profileForm">
+      <div class="field">
+        <label for="profileUsername">Username</label>
+        <input type="text" id="profileUsername" required minlength="2" maxlength="20" autocomplete="username" placeholder="e.g. booklover23">
+      </div>
+      <p id="profileError" style="color:var(--clay);font-size:14px;min-height:20px;margin:0 0 12px"></p>
+      <button type="submit" class="btn-submit">Save profile</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin PIN Modal -->
+<div class="modal-overlay" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <h2 id="pinTitle">Admin access</h2>
+      <button type="button" class="modal-close" id="closePin" aria-label="Close">×</button>
+    </div>
+    <p style="margin:0 0 16px;font-size:15px;color:#4a5754">Enter the admin PIN to continue.</p>
+    <form id="pinForm">
+      <div class="field">
+        <label for="adminPin">PIN</label>
+        <input type="password" id="adminPin" maxlength="6" inputmode="numeric" pattern="[0-9]*" required autocomplete="off" style="letter-spacing:4px;font-size:18px;text-align:center">
+      </div>
+      <p id="pinError" style="color:var(--clay);font-size:14px;min-height:20px;margin:0 0 12px"></p>
+      <button type="submit" class="btn-submit">Continue</button>
+    </form>
+  </div>
+</div>
+
+<script src="backend.js"></script>
+<script>
+(function () {
+  // ===== Elements =====
+  const authBtn = document.getElementById('openLogin');
+  const profileBtn = document.getElementById('profileBtn');
+  const profileIcon = document.getElementById('profileIcon');
+  const profileName = document.getElementById('profileName');
+
+  // ===== Auth Button + Profile Icon =====
+  function updateAuthButton() {
+    if (Backend.isCustomerLoggedIn()) {
+      authBtn.textContent = 'Log out';
+      authBtn.onclick = () => {
+        Backend.customerLogout();
+        updateAuthButton();
+      };
+
+      // Show profile icon
+      const profile = Backend.getCustomerProfile();
+      if (profile && profile.username) {
+        profileBtn.style.display = 'inline-flex';
+        profileName.textContent = profile.username;
+        profileIcon.textContent = profile.username.charAt(0).toUpperCase();
+      } else {
+        profileBtn.style.display = 'none';
+      }
+    } else {
+      authBtn.textContent = 'Log in';
+      authBtn.onclick = openModal;
+      profileBtn.style.display = 'none';
+    }
+  }
+
+  // ===== Login Modal =====
+  const overlay = document.getElementById('loginModal');
+  const closeBtn = document.getElementById('closeLogin');
+  const form = document.getElementById('authForm');
+  const title = document.getElementById('modalTitle');
+  const submitBtn = document.getElementById('authSubmit');
+  const tabs = document.querySelectorAll('.modal-tab');
+  const showPass = document.getElementById('showPassword');
+  const passInput = document.getElementById('authPassword');
+  const confirmInput = document.getElementById('authConfirm');
+  const emailInput = document.getElementById('authEmail');
+  const formError = document.getElementById('authError');
+
+  function openModal() {
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    formError.textContent = '';
+    emailInput.focus();
+  }
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+  });
+
+  // Tabs
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const mode = tab.dataset.mode;
+      formError.textContent = '';
+
+      if (mode === 'signup') {
+        form.classList.add('mode-signup');
+        title.textContent = 'Create account';
+        submitBtn.textContent = 'Create account';
+        confirmInput.required = true;
+      } else {
+        form.classList.remove('mode-signup');
+        title.textContent = 'Log in';
+        submitBtn.textContent = 'Log in';
+        confirmInput.required = false;
+        confirmInput.value = '';
+      }
+    });
+  });
+
+  // Show password
+  showPass.addEventListener('change', () => {
+    const type = showPass.checked ? 'text' : 'password';
+    passInput.type = type;
+    confirmInput.type = type;
+  });
+
+  // Handle Login / Create Account
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError.textContent = '';
+
+    const email = emailInput.value.trim();
+    const password = passInput.value;
+    const isSignup = form.classList.contains('mode-signup');
+
+    if (isSignup) {
+      if (password !== confirmInput.value) {
+        formError.textContent = 'Passwords do not match.';
+        return;
+      }
+      const result = await Backend.customerRegister(email, password);
+      if (!result.ok) {
+        formError.textContent = result.error;
+        return;
+      }
+    } else {
+      const result = await Backend.customerLogin(email, password);
+      if (!result.ok) {
+        formError.textContent = result.error;
+        return;
+      }
+    }
+
+    // Success
+    closeModal();
+    updateAuthButton();
+    form.reset();
+
+    // Ask for profile if they don't have one yet
+    if (!Backend.hasProfile()) {
+      openProfileModal();
+    }
+  });
+
+  // ===== Profile Modal =====
+  const profileModal = document.getElementById('profileModal');
+  const profileForm = document.getElementById('profileForm');
+  const profileUsername = document.getElementById('profileUsername');
+  const profileError = document.getElementById('profileError');
+
+  function openProfileModal() {
+    profileModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    profileError.textContent = '';
+    profileUsername.value = '';
+    setTimeout(() => profileUsername.focus(), 50);
+  }
+
+  function closeProfileModal() {
+    profileModal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  profileForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    profileError.textContent = '';
+
+    const result = Backend.updateCustomerProfile(profileUsername.value);
+    if (!result.ok) {
+      profileError.textContent = result.error;
+      return;
+    }
+
+    closeProfileModal();
+    updateAuthButton(); // refresh the icon + username
+  });
+
+  // ===== Add to cart =====
+  document.querySelectorAll('.add-to-cart').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (Backend.isCustomerLoggedIn()) {
+        alert('Added to cart! (demo)');
+      } else {
+        openModal();
+      }
+    });
+  });
+
+  // ===== Admin PIN =====
+  const ADMIN_PIN = "2026";
+  const pinModal = document.getElementById("pinModal");
+  const adminLink = document.getElementById("adminLink");
+  const closePin = document.getElementById("closePin");
+  const pinForm = document.getElementById("pinForm");
+  const pinInput = document.getElementById("adminPin");
+  const pinError = document.getElementById("pinError");
+
+  function openPinModal() {
+    pinModal.classList.add("open");
+    document.body.style.overflow = "hidden";
+    pinInput.value = "";
+    pinError.textContent = "";
+    setTimeout(() => pinInput.focus(), 50);
+  }
+
+  function closePinModal() {
+    pinModal.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  adminLink.addEventListener("click", e => {
+    e.preventDefault();
+    closeModal();
+    openPinModal();
+  });
+
+  closePin.addEventListener("click", closePinModal);
+  pinModal.addEventListener("click", e => {
+    if (e.target === pinModal) closePinModal();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && pinModal.classList.contains("open")) closePinModal();
+  });
+
+  pinForm.addEventListener("submit", e => {
+    e.preventDefault();
+    if (pinInput.value === ADMIN_PIN) {
+      window.location.href = "admin.html";
+    } else {
+      pinError.textContent = "Incorrect PIN. Try again.";
+      pinInput.value = "";
+      pinInput.focus();
+    }
+  });
+
+  // Initialize
+  updateAuthButton();
+})();
+</script>
+</body>
+</html>
